@@ -1,0 +1,72 @@
+=================Add Button in json file===========
+{
+        "doctype": "Custom Field",
+        "dt": "Sales Order",
+        "module": "Payment Installments",
+        "name": "Add Extra Charge",
+        "fieldname": "add_extra_charge",
+        "fieldtype": "Button",
+        "label": "Add Extra Charge",
+        "insert_after": "installment_calculation"
+    }
+
+=================Add Method in JS ===========
+
+add_extra_charge: (frm, cdt, cdn) => {
+        var d = new frappe.ui.Dialog({
+            title: __('Add Extra Charge'),
+            fields: [
+                {
+                    "label" : "Item",
+                    "fieldname": "item",
+                    "fieldtype": "Link",
+                    "reqd": 1,
+                    "options": "Item",
+                },
+                {
+                    "label" : "Amount",
+                    "fieldname": "amount",
+                    "fieldtype": "Float",
+                    "reqd": 1,
+                }
+            ],
+            primary_action: function() {
+                var data = d.get_values();
+                frappe.call({
+                    method: "your_app_name.overrides.sale_order.add_extra_charge",
+                    args: {
+                        name: frm.doc.name,
+                        item: data.item,
+                        amount: data.amount,
+                    },
+                    callback: function(r) {
+                        if(!r.exc) {
+                            if(r.message) {
+                                frappe.set_route("Form", "Account", r.message);
+                            }
+                            d.hide();
+                        }
+                    }
+                });
+            },
+            primary_action_label: __('Confirm')
+        });
+        d.show();
+    }
+
+=================Add Method in py ===========
+@frappe.whitelist()
+def add_extra_charge(name, item, amount):
+    so = frappe.get_doc("Sales Order", name)
+    items = {
+                    "item_code": item,
+                    "item_name": item,
+                    "description": item,
+                    "rate": amount,
+                    "amount": amount,
+                    "qty": 1,
+                    "extra_charge": 1,
+                    "stock_uom": "Nos"
+                }
+    so.append("items", items)
+    so.save()
